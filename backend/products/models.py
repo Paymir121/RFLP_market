@@ -1,107 +1,58 @@
 from django.db import models
-from django.contrib.auth.models import User
 
+class ProductType(models.Model):
+    """Тип продукта (радиофармпрепарат, оборудование и т.д.)"""
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
+    class Meta:
+        verbose_name = "Тип продукта"
+        verbose_name_plural = "Типы продуктов"
+
+class ProductCategory(models.Model):
+    """Категория продукта"""
+    name = models.CharField(max_length=100)
+    product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.product_type.name} - {self.name}"
+
+    class Meta:
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории продуктов"
 
 class Product(models.Model):
-    name = models.CharField(
-        max_length=256,
-        verbose_name="Название",
-        help_text="Введите название продукта",
-    )
-    description = models.TextField(
-        verbose_name="Описание",
-        help_text="Введите описание продукта",
-    )
-    price = models.DecimalField(
-        verbose_name="Цена",
-        help_text="Введите цену продукта",
-        max_digits=8,
-        decimal_places=2,
-    )
-    image = models.ImageField(
-        "Картинка",
-        upload_to="posts/",
-        null=True,
-        blank=True,
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name="Автор",
-    )
+    """Основная модель продукта"""
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=0)
+    category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Динамические характеристики для разных типов продуктов
+    specifications = models.JSONField()
+
+    def __str__(self):
+        return self.name
+
     class Meta:
         verbose_name = "Продукт"
         verbose_name_plural = "Продукты"
 
-# Create your models here.
-class Tag(models.Model):
-    slug = models.SlugField(max_length=255, unique=True, db_index=True)
-    name = models.CharField(
-        max_length=256,
-        verbose_name="Тег",
-        help_text="Введите название тега",
-    )
-    class Meta:
-        verbose_name = "Таг"
-        verbose_name_plural = "Таги"
+class ProductImage(models.Model):
+    """Изображения продуктов"""
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='products/')
+    is_main = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.name
-
-
-class ProductTag(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+        return f"Фотография для {self.product.name}"
 
     class Meta:
-        verbose_name = "Таг в продукте"
-        verbose_name_plural = "Таги в продуктах"
-
-    def __str__(self):
-        return f"{self.product} {self.tag}"
-
-
-
-class TypeOfProduct(models.Model):
-    slug = models.SlugField(max_length=255, unique=True, db_index=True)
-    name = models.CharField(
-        max_length=256,
-        verbose_name="Тип продукта",
-        help_text="Введите название типа",
-    )
-    class Meta:
-        verbose_name = "Тип"
-        verbose_name_plural = "Типы"
-
-    def __str__(self):
-        return self.name
-
-
-class ProductType(models.Model):
-    """Модель связи продуктов и типов"""
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    type = models.ForeignKey(TypeOfProduct, on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name = "Тип в продукте"
-        verbose_name_plural = "Типы в продуктах"
-
-    def __str__(self):
-        return f"{self.product} {self.type}"
-
-class ProductFeatures(models.Model):
-    type = models.ForeignKey(TypeOfProduct, on_delete=models.CASCADE)
-    slug = models.SlugField(max_length=255, unique=True, db_index=True)
-    name = models.CharField(
-        max_length=256,
-        verbose_name="Характеристика продукта",
-        help_text="Введите характеристику продукта",
-    )
-    measurement_unit = models.TextField(verbose_name="Единицы измерения")
-
-    class Meta:
-        verbose_name = "Характеристика"
-        verbose_name_plural = "Характеристики"
-
-    def __str__(self):
-        return self.name
+        verbose_name = "Фото Продукта"
+        verbose_name_plural = "Фотографии продукта"

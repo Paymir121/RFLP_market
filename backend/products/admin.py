@@ -1,43 +1,60 @@
 from django.contrib import admin
-from .models import Product, Tag, ProductTag, TypeOfProduct, ProductType, ProductFeatures
+from django.urls import path
+from django.shortcuts import render
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.contrib import messages
+from django.utils.html import format_html
+from .models import Product, ProductType, ProductCategory, ProductImage
+from .add_test_data import  load_data_from_json
 
-class ProductTagInline(admin.TabularInline):
-    model = ProductTag
-    extra = 1
 
-class ProductTypeInline(admin.TabularInline):
-    model = ProductType
-    extra = 1
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 1  # Количество пустых полей для добавления новых изображений
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'price', 'author')
+    inlines = [ProductImageInline]
+    list_display = ('name', 'price', 'quantity', 'is_active', 'created_at', 'updated_at')
     search_fields = ('name', 'description')
-    list_filter = ('author',)
-    inlines = [ProductTagInline, ProductTypeInline]
+    list_filter = ('is_active', 'category')
+    readonly_fields = ('process_button',)
 
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
-    search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'process-products/',
+                self.admin_site.admin_view(self.process_products),
+                name='process_products'
+            ),
+        ]
+        return custom_urls + urls
 
-@admin.register(TypeOfProduct)
-class TypeOfProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug')
-    search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}
+    def process_button(self, obj):
+        return format_html(
+            '<a class="button" href="{}">Обработать препараты</a>',
+            reverse('admin:process_products')
+        )
 
-@admin.register(ProductFeatures)
-class ProductFeaturesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'slug', 'type')
-    search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}
+    process_button.short_description = 'Действия'
+    process_button.allow_tags = True
 
-@admin.register(ProductTag)
-class ProductTagAdmin(admin.ModelAdmin):
-    list_display = ('product', 'tag')
+    def process_products(self, request):
+        # Вызываем нашу функцию из отдельного файла
+        success = load_data_from_json("products/test_data.json")
+
+        if success:
+            return HttpResponseRedirect(reverse('admin:products_product_changelist'))
+        else:
+            return HttpResponseRedirect(reverse('admin:index'))
+
+@admin.register(ProductCategory)
+class ProductCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'product_type')
 
 @admin.register(ProductType)
 class ProductTypeAdmin(admin.ModelAdmin):
-    list_display = ('product', 'type')
+    list_display = ('name',)
+
