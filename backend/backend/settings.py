@@ -114,7 +114,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
-    "PAGE_SIZE": 4,
+    "PAGE_SIZE": 10,
 }
 
 CORS_ALLOW_ALL_ORIGINS = True

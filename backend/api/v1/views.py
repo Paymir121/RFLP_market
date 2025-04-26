@@ -11,68 +11,83 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 
-class ProductTypeViewSet(viewsets.ModelViewSet):
-    queryset = ProductType.objects.all()
-    serializer_class = ProductTypeSerializer
-    permission_classes = [AllowAny]
-
-
-class ProductCategoryViewSet(viewsets.ModelViewSet):
-    queryset = ProductCategory.objects.all()
-    serializer_class = ProductCategorySerializer
-    permission_classes = [AllowAny]
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['product_type']
-
-
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.filter(is_active=True).select_related('category')
+    queryset = Product.objects.filter(is_active=True).select_related('category__product_type').prefetch_related(
+        'images')
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'category__product_type']
-    search_fields = ['name', 'description']
-    ordering_fields = ['price', 'created_at']
+    filterset_fields = {
+        'category': ['exact'],
+        'category__product_type': ['exact'],  # Фильтрация по типу продукта
+        'is_active': ['exact'],
+    }
+    search_fields = ['name', 'description', 'category__name', 'category__product_type__name']
+    ordering_fields = ['price', 'created_at', 'updated_at']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return ProductCreateSerializer
         return ProductSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Дополнительная фильтрация по типу продукта
+        product_type_id = self.request.query_params.get('product_type', None)
+        if product_type_id:
+            queryset = queryset.filter(category__product_type_id=product_type_id)
+
+        return queryset
+
     def perform_create(self, serializer):
         """Добавляем специфичные поля при создании продукта"""
         product = serializer.save()
-
-        # Пример обработки спецификаций для разных категорий
-        category_name = product.category.name.lower()
+        category = product.category
         specs = {}
 
-        if 'radiopharmaceutical' in category_name:
+        # Определяем спецификации в зависимости от типа продукта
+        if category.product_type.name.lower() == 'радиофармпрепарат':
             specs = {
                 'half_life': self.request.data.get('half_life', ''),
                 'radiation_type': self.request.data.get('radiation_type', ''),
-                'storage_conditions': self.request.data.get('storage_conditions', '')
+                'storage_conditions': self.request.data.get('storage_conditions', ''),
             }
-        elif 'equipment' in category_name:
+        elif category.product_type.name.lower() == 'оборудование':
             specs = {
                 'manufacturer': self.request.data.get('manufacturer', ''),
                 'warranty': self.request.data.get('warranty', ''),
-                'weight': self.request.data.get('weight', '')
+                'weight': self.request.data.get('weight', ''),
+            }
+        elif category.product_type.name.lower() == 'вспомогательные вещества':
+            specs = {
+                'composition': self.request.data.get('composition', ''),
+                'packaging': self.request.data.get('packaging', ''),
             }
 
         product.specifications = specs
         product.save()
 
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [AllowAny]
-        return [permission() for permission in permission_classes]
 
-    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
-    def order(self, request, pk=None):
-        product = self.get_object()
-        quantity = request.data.get('quantity', 1)
+class ProductTypeViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ProductType.objects.all()
+    serializer_class = ProductTypeSerializer
+    permission_classes = [AllowAny]
+    pagination_class = None  # Отключаем пагинацию для типов продуктов
 
-        # Здесь должна быть логика создания заказа
-        return Response({'status': f'Ordered {quantity} of {product.name}'})
+
+class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ProductCategory.objects.all().select_related('product_type')
+    serializer_class = ProductCategorySerializer
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product_type']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        # Фильтрация категорий по типу продукта
+        product_type_id = self.request.query_params.get('product_type', None)
+        if product_type_id:
+            queryset = queryset.filter(product_type_id=product_type_id)
+
+        return queryset
