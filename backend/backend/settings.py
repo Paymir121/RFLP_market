@@ -10,11 +10,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY_DJANGO", "key does not exist")
 
 DEBUG = os.getenv("DEBUG", True)
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-]
 
 # ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,0.0.0.0").split(",")
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", "0.0.0.0"]
@@ -27,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "rest_framework",
+    'corsheaders',
     'drf_yasg',
     "djoser",
     "rest_framework.authtoken",
@@ -38,7 +34,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -104,7 +101,7 @@ STATICFILES_DIRS = ((BASE_DIR / "static/"),)
 INITIAL_DATA_DIR = BASE_DIR / "static/data/"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = "/app/media"
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -119,3 +116,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 4,
 }
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Или разрешить конкретные домены:
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # React по умолчанию
+    "http://127.0.0.1:3000",
+]
