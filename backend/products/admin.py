@@ -43,7 +43,7 @@ class ProductAdmin(admin.ModelAdmin):
 
     def process_products(self, request):
         # Вызываем нашу функцию из отдельного файла
-        success = load_data_from_json("products/test_data.json")
+        success = load_data_from_json()
 
         if success:
             return HttpResponseRedirect(reverse('admin:products_product_changelist'))

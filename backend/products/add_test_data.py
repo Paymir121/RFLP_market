@@ -8,16 +8,16 @@ from django.utils import timezone
 from products.models import ProductType, ProductCategory, Product, ProductImage
 
 
-def load_data_from_json(file_path):
+def load_data_from_json():
     """Загрузка данных из JSON файла в базу данных"""
-    with open(file_path, 'r', encoding='utf-8') as file:
-        data = json.load(file)
+    with open("products/product_types.json", 'r', encoding='utf-8') as file:
+        product_types_data = json.load(file)
 
-    print(f"Найдено {len(data.get('products', []))} продуктов для загрузки")
+    print(f"Найдено {len(product_types_data.get('product_types', []))} product_types")
 
     # Сначала создаем все типы продуктов
     product_types = {}
-    for type_data in data.get("product_types", []):
+    for type_data in product_types_data.get("product_types", []):
         product_type, created = ProductType.objects.get_or_create(
             name=type_data["name"],
             defaults={'description': type_data["description"]}
@@ -26,9 +26,16 @@ def load_data_from_json(file_path):
         if created:
             print(f"Создан новый тип продукта: {product_type.name}")
 
-    # Затем создаем все категории продуктов
+    print("product_types=", product_types)
+    with open("products/product_categories.json", 'r', encoding='utf-8') as file:
+        categories_data = json.load(file)
+
+    print(f"Найдено {len(categories_data.get('product_categories', []))} product_categories")
+
     categories = {}
-    for category_data in data.get("product_categories", []):
+    for category_data in categories_data.get("product_categories", []):
+        print("name=", category_data["name"])
+        print(f"product_type=", product_types[category_data["product_type"]])
         category, created = ProductCategory.objects.get_or_create(
             name=category_data["name"],
             product_type=product_types[category_data["product_type"]]
@@ -36,9 +43,16 @@ def load_data_from_json(file_path):
         categories[category_data["name"]] = category
         if created:
             print(f"Создана новая категория: {category.name}")
+    print("categories=", categories)
+    with open("products/products.json", 'r', encoding='utf-8') as file:
+        products_data = json.load(file)
+
+    print(f"Найдено {len(products_data.get('products', []))} продуктов для загрузки")
 
     # Теперь создаем продукты
-    for product_data in data.get("products", []):
+    for product_data in products_data.get("products", []):
+        print("product_data=",product_data)
+        print("category=", categories[product_data["category"]])
         try:
             product = Product.objects.create(
                 name=product_data["name"],
@@ -55,19 +69,6 @@ def load_data_from_json(file_path):
             print(f"Ошибка при добавлении продукта {product_data.get('name')}: {e}")
             continue
 
-    # Добавляем изображения продуктов
-    for image_data in data.get("product_images", []):
-        try:
-            product = Product.objects.get(name=image_data["product"])
-            ProductImage.objects.create(
-                product=product,
-                image=image_data["image"],
-                is_main=image_data["is_main"]
-            )
-            print(f"Добавлено изображение для продукта {product.name}")
-        except Exception as e:
-            print(f"Ошибка при добавлении изображения: {e}")
-            continue
 
 
 if __name__ == "__main__":
