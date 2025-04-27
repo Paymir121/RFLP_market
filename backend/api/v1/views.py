@@ -47,29 +47,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Добавляем специфичные поля при создании продукта"""
         product = serializer.save()
-        category = product.category
-        specs = {}
-
-        # Определяем спецификации в зависимости от типа продукта
-        if category.product_type.name.lower() == 'радиофармпрепарат':
-            specs = {
-                'half_life': self.request.data.get('half_life', ''),
-                'radiation_type': self.request.data.get('radiation_type', ''),
-                'storage_conditions': self.request.data.get('storage_conditions', ''),
-            }
-        elif category.product_type.name.lower() == 'оборудование':
-            specs = {
-                'manufacturer': self.request.data.get('manufacturer', ''),
-                'warranty': self.request.data.get('warranty', ''),
-                'weight': self.request.data.get('weight', ''),
-            }
-        elif category.product_type.name.lower() == 'вспомогательные вещества':
-            specs = {
-                'composition': self.request.data.get('composition', ''),
-                'packaging': self.request.data.get('packaging', ''),
-            }
-
-        product.specifications = specs
+        print(product)
         product.save()
 
 
@@ -86,6 +64,7 @@ class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['product_type']
+    pagination_class = None  # Отключаем пагинацию для типов продуктов
 
     def get_queryset(self):
         queryset = super().get_queryset()
