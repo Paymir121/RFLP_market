@@ -1,6 +1,29 @@
 from rest_framework import serializers
 from products.models import Product, ProductType, ProductCategory, ProductImage
+from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'is_active', 'is_staff', 'is_superuser', 'date_joined', 'last_login', 'first_name', 'last_name']
+        read_only_fields = ['id', 'email', 'is_active', 'is_staff', 'is_superuser', 'date_joined', 'last_login']
+
+class UserCreateSerializer(BaseUserCreateSerializer):
+    class Meta(BaseUserCreateSerializer.Meta):
+        model = User
+        fields = ('id', 'email', 'password', 'first_name', 'last_name', 'username')
+        extra_kwargs = {
+            'username': {'required': False, 'allow_null': True}
+        }
+
+    def create(self, validated_data):
+        # If username is not provided, use email as username
+        if 'username' not in validated_data or not validated_data['username']:
+            validated_data['username'] = validated_data['email']
+        return super().create(validated_data)
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -53,9 +76,28 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
+    images = serializers.ListField(
+        child=serializers.ImageField(allow_empty_file=False, use_url=False),
+        write_only=True,
+        required=False
+    )
+
     class Meta:
         model = Product
         fields = [
             'name', 'description', 'price', 'quantity',
-            'category', 'specifications'
+            'category', 'specifications', 'images'
         ]
+
+    def create(self, validated_data):
+        # Get images from validated_data (they're now properly processed)
+        images = validated_data.pop('images', [])
+
+        # Create product
+        product = Product.objects.create(**validated_data)
+
+        # Create product images
+        for image in images:
+            ProductImage.objects.create(product=product, image=image)
+
+        return product
