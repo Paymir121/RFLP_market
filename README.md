@@ -1,17 +1,13 @@
 
 ## Описание
-### О проекте
-Галера Яндекс практикума по поднятию навыков работы с DRF
-```
-        https://paymir121.ddns.net/
-```
-login nikox121
-password 456852Zx
 ### Технологии
-Python 3.7 Django 3.2.16
+- **Django**
+- **React**
+- **Docker**
+- **Nginx**
 
 ### Авторы
-Nikki Nikonor и Яндекс Практикум
+Nikki Nikonor
 
 ## Установка
 Как развернуть проект на локальной машине;
@@ -21,7 +17,7 @@ Nikki Nikonor и Яндекс Практикум
 Клонируете репозиторий:
 
 ```bash
-        git clone  git@github.com:Paymir121/foodgram-project-react.git
+        git clone  git@github.com:Paymir121/RLPG_market.git
 ```
 
 ### Cоздать и активировать виртуальное окружение:
@@ -129,64 +125,6 @@ python -m venv venv
 ```
         sudo nano /etc/nginx/sites-enabled/default
 ```
-
-## Примеры
-Некоторые примеры запросов к API.
-
-### Регистрация
-
-#### Для смертных
-
-##### End Point
-```
-POST  api/v1/auth/signup/
-```
-#####  Body
-```
-{
-        "email": "paymisssr@kek.ru",
-        "username": "passsymir121"
-}
-```
-#### Для admin
-
-#####  End Point
-```
-POST  api/users/
-```
-#####  Body
-```
-{
-    "email": "nikox12@mail.ru",
-    "username": "nikjox",
-    "password": "456852Zx",
-    "first_name": "kewk",
-    "last_name": "wsq"
-}
-```
-### Получение токена
-
-##### End Point
-```
-POST  api/auth/token/
-```
-#####  Body
-```
-{
-    "email": "nikox12@mail.ru",
-    "password": "456852Zx",
-}
-```
-
-###  Все примеры
-
-#### Используя ReDoc
-
-##### End Point
-```http
-        /redoc
-```
-
 
 #### Используя Rest API
 Посмотреть\отправить запросы можно используя плагин для Visual Studia Code Rest API все примеры лежат в папке backend/request
